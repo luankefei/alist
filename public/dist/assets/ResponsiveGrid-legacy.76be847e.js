@@ -1,1 +1,0 @@
-System.register(["./index-legacy.3e487d44.js"],(function(e,t){"use strict";var r,i,n;return{setters:[e=>{r=e.G,i=e.i,n=e.c_}],execute:function(){e("R",(e=>{let t;return"responsive"===r("settings_layout")&&(t="repeat(auto-fill, minmax(424px, 1fr))"),i(n,{w:"$full",gap:"$2",templateColumns:{"@initial":"1fr","@lg":t},get children(){return e.children}})}))}}}));
