@@ -93,7 +93,8 @@ func _copy(ctx context.Context, srcObjPath, dstDirPath string, lazyCache ...bool
 			if err != nil {
 				return nil, errors.WithMessagef(err, "failed get [%s] stream", srcObjPath)
 			}
-			return nil, op.Put(ctx, dstStorage, dstDirActualPath, ss, nil, false)
+			_, err = op.Put(ctx, dstStorage, dstDirActualPath, ss, nil, false)
+			return nil, err
 		}
 	}
 	// not in the same storage
@@ -170,5 +171,6 @@ func copyFileBetween2Storages(tsk *CopyTask, srcStorage, dstStorage driver.Drive
 	if err != nil {
 		return errors.WithMessagef(err, "failed get [%s] stream", srcFilePath)
 	}
-	return op.Put(tsk.Ctx(), dstStorage, dstDirPath, ss, tsk.SetProgress, true)
+	_, err = op.Put(tsk.Ctx(), dstStorage, dstDirPath, ss, tsk.SetProgress, true)
+	return err
 }

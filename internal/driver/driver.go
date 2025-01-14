@@ -77,7 +77,7 @@ type Remove interface {
 }
 
 type Put interface {
-	Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up UpdateProgress) error
+	Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up UpdateProgress) (any, error)
 }
 
 //type WriteResult interface {

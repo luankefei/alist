@@ -3,6 +3,12 @@ package ftp
 import (
 	"bytes"
 	"context"
+	"io"
+	"net/http"
+	"os"
+	stdpath "path"
+	"time"
+
 	ftpserver "github.com/KirCute/ftpserverlib-pasvportmap"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/errs"
@@ -12,11 +18,6 @@ import (
 	"github.com/alist-org/alist/v3/internal/stream"
 	"github.com/alist-org/alist/v3/server/common"
 	"github.com/pkg/errors"
-	"io"
-	"net/http"
-	"os"
-	stdpath "path"
-	"time"
 )
 
 type FileUploadProxy struct {
@@ -156,7 +157,7 @@ func (f *FileUploadWithLengthProxy) Write(p []byte) (n int, err error) {
 			Reader:       reader,
 		}
 		go func() {
-			e := fs.PutDirectly(f.ctx, dir, s, true)
+			_, e := fs.PutDirectly(f.ctx, dir, s, true)
 			f.errChan <- e
 			close(f.errChan)
 		}()
@@ -200,6 +201,7 @@ func (f *FileUploadWithLengthProxy) Close() error {
 			WebPutAsTask: false,
 			Reader:       bytes.NewReader(data),
 		}
-		return fs.PutDirectly(f.ctx, dir, s, true)
+		_, err := fs.PutDirectly(f.ctx, dir, s, true)
+		return err
 	}
 }

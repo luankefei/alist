@@ -501,9 +501,10 @@ func Remove(ctx context.Context, storage driver.Driver, path string) error {
 	return errors.WithStack(err)
 }
 
-func Put(ctx context.Context, storage driver.Driver, dstDirPath string, file model.FileStreamer, up driver.UpdateProgress, lazyCache ...bool) error {
+func Put(ctx context.Context, storage driver.Driver, dstDirPath string, file model.FileStreamer, up driver.UpdateProgress, lazyCache ...bool) (any, error) {
 	if storage.Config().CheckStatus && storage.GetStorage().Status != WORK {
-		return errors.Errorf("storage not init: %s", storage.GetStorage().Status)
+		log.Debugln("return 1")
+		return nil, errors.Errorf("storage not init: %s", storage.GetStorage().Status)
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
@@ -520,13 +521,13 @@ func Put(ctx context.Context, storage driver.Driver, dstDirPath string, file mod
 		if fi.GetSize() == 0 {
 			err = Remove(ctx, storage, dstPath)
 			if err != nil {
-				return errors.WithMessagef(err, "while uploading, failed remove existing file which size = 0")
+				return nil, errors.WithMessagef(err, "while uploading, failed remove existing file which size = 0")
 			}
 		} else if storage.Config().NoOverwriteUpload {
 			// try to rename old obj
 			err = Rename(ctx, storage, dstPath, tempName)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		} else {
 			file.SetExist(fi)
@@ -534,22 +535,24 @@ func Put(ctx context.Context, storage driver.Driver, dstDirPath string, file mod
 	}
 	err = MakeDir(ctx, storage, dstDirPath)
 	if err != nil {
-		return errors.WithMessagef(err, "failed to make dir [%s]", dstDirPath)
+		return nil, errors.WithMessagef(err, "failed to make dir [%s]", dstDirPath)
 	}
 	parentDir, err := GetUnwrap(ctx, storage, dstDirPath)
 	// this should not happen
 	if err != nil {
-		return errors.WithMessagef(err, "failed to get dir [%s]", dstDirPath)
+		return nil, errors.WithMessagef(err, "failed to get dir [%s]", dstDirPath)
 	}
 	// if up is nil, set a default to prevent panic
 	if up == nil {
 		up = func(p float64) {}
 	}
 
+	var data any
 	switch s := storage.(type) {
 	case driver.PutResult:
 		var newObj model.Obj
 		newObj, err = s.Put(ctx, parentDir, file, up)
+		log.Debugf("driver.PutResult----: %v", newObj)
 		if err == nil {
 			if newObj != nil {
 				addCacheObj(storage, dstDirPath, model.WrapObjName(newObj))
@@ -558,12 +561,15 @@ func Put(ctx context.Context, storage driver.Driver, dstDirPath string, file mod
 			}
 		}
 	case driver.Put:
-		err = s.Put(ctx, parentDir, file, up)
+		data, err = s.Put(ctx, parentDir, file, up)
+		log.Debugf("driver.Put----: %v", data)
 		if err == nil && !utils.IsBool(lazyCache...) {
 			ClearCache(storage, dstDirPath)
 		}
 	default:
-		return errs.NotImplement
+
+		log.Debugln("return 2")
+		return nil, errs.NotImplement
 	}
 	log.Debugf("put file [%s] done", file.GetName())
 	if storage.Config().NoOverwriteUpload && fi != nil && fi.GetSize() > 0 {
@@ -577,12 +583,15 @@ func Put(ctx context.Context, storage driver.Driver, dstDirPath string, file mod
 			// upload success, remove old obj
 			err := Remove(ctx, storage, tempPath)
 			if err != nil {
-				return err
+
+				log.Debugln("return 3")
+				return nil, err
 			} else {
 				key := Key(storage, stdpath.Join(dstDirPath, file.GetName()))
 				linkCache.Del(key)
 			}
 		}
 	}
-	return errors.WithStack(err)
+	log.Debugln("return 4: %v", data)
+	return data, errors.WithStack(err)
 }

@@ -126,14 +126,16 @@ type UpPreResp struct {
 	} `json:"metadata"`
 }
 
+type HashRespData struct {
+	Finish     bool   `json:"finish"`
+	Fid        string `json:"fid"`
+	Thumbnail  string `json:"thumbnail"`
+	FormatType string `json:"format_type"`
+}
+
 type HashResp struct {
 	Resp
-	Data struct {
-		Finish     bool   `json:"finish"`
-		Fid        string `json:"fid"`
-		Thumbnail  string `json:"thumbnail"`
-		FormatType string `json:"format_type"`
-	} `json:"data"`
+	Data     HashRespData `json:"data"`
 	Metadata struct {
 	} `json:"metadata"`
 }

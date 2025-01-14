@@ -6,12 +6,13 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"path"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/fs"
@@ -322,7 +323,7 @@ func (b *s3Backend) PutObject(
 		Mimetype: meta["Content-Type"],
 	}
 
-	err = fs.PutDirectly(ctx, reqPath, stream)
+	_, err = fs.PutDirectly(ctx, reqPath, stream)
 	if err != nil {
 		return result, err
 	}

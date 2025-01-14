@@ -342,7 +342,7 @@ func (h *Handler) handlePut(w http.ResponseWriter, r *http.Request) (status int,
 	if fsStream.Mimetype == "" {
 		fsStream.Mimetype = utils.GetMimeType(reqPath)
 	}
-	err = fs.PutDirectly(ctx, path.Dir(reqPath), fsStream)
+	_, err = fs.PutDirectly(ctx, path.Dir(reqPath), fsStream)
 	if errs.IsNotFoundError(err) {
 		return http.StatusNotFound, err
 	}

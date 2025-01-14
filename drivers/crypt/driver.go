@@ -400,7 +400,7 @@ func (d *Crypt) Put(ctx context.Context, dstDir model.Obj, streamer model.FileSt
 		ForceStreamUpload: true,
 		Exist:             streamer.GetExist(),
 	}
-	err = op.Put(ctx, d.remoteStorage, dstDirActualPath, streamOut, up, false)
+	_, err = op.Put(ctx, d.remoteStorage, dstDirActualPath, streamOut, up, false)
 	if err != nil {
 		return err
 	}

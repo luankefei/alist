@@ -1,6 +1,7 @@
 package tool
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -63,7 +64,8 @@ func (t *TransferTask) Run() error {
 		log.Errorf("find relation directory error: %v", err)
 	}
 	newDistDir := filepath.Join(dstDirActualPath, relDir)
-	return op.Put(t.Ctx(), storage, newDistDir, s, t.SetProgress)
+	_, err = op.Put(context.Background(), storage, newDistDir, s, nil)
+	return err
 }
 
 func (t *TransferTask) GetName() string {

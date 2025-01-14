@@ -134,10 +134,10 @@ func (d *QuarkOrUC) Remove(ctx context.Context, obj model.Obj) error {
 	return err
 }
 
-func (d *QuarkOrUC) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) error {
+func (d *QuarkOrUC) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) (any, error) {
 	tempFile, err := stream.CacheFullInTempFile()
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer func() {
 		_ = tempFile.Close()
@@ -145,36 +145,38 @@ func (d *QuarkOrUC) Put(ctx context.Context, dstDir model.Obj, stream model.File
 	m := md5.New()
 	_, err = utils.CopyWithBuffer(m, tempFile)
 	if err != nil {
-		return err
+		return "", err
 	}
 	_, err = tempFile.Seek(0, io.SeekStart)
 	if err != nil {
-		return err
+		return "", err
 	}
 	md5Str := hex.EncodeToString(m.Sum(nil))
 	s := sha1.New()
 	_, err = utils.CopyWithBuffer(s, tempFile)
 	if err != nil {
-		return err
+		return "", err
 	}
 	_, err = tempFile.Seek(0, io.SeekStart)
 	if err != nil {
-		return err
+		return "", err
 	}
 	sha1Str := hex.EncodeToString(s.Sum(nil))
 	// pre
 	pre, err := d.upPre(stream, dstDir.GetID())
 	if err != nil {
-		return err
+		return "", err
 	}
 	log.Debugln("hash: ", md5Str, sha1Str)
 	// hash
-	finish, err := d.upHash(md5Str, sha1Str, pre.Data.TaskId)
+	finish, resData, err := d.upHash(md5Str, sha1Str, pre.Data.TaskId)
+	log.Debugln("-----hashdata: ", resData.Fid)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if finish {
-		return nil
+		// resData.Fid
+		return resData, nil
 	}
 	// part up
 	partSize := pre.Metadata.PartSize
@@ -186,7 +188,7 @@ func (d *QuarkOrUC) Put(ctx context.Context, dstDir model.Obj, stream model.File
 	partNumber := 1
 	for left > 0 {
 		if utils.IsCanceled(ctx) {
-			return ctx.Err()
+			return "", ctx.Err()
 		}
 		if left > int64(partSize) {
 			bytes = defaultBytes
@@ -195,17 +197,18 @@ func (d *QuarkOrUC) Put(ctx context.Context, dstDir model.Obj, stream model.File
 		}
 		_, err := io.ReadFull(tempFile, bytes)
 		if err != nil {
-			return err
+			return "", err
 		}
 		left -= int64(len(bytes))
 		log.Debugf("left: %d", left)
 		m, err := d.upPart(ctx, pre, stream.GetMimetype(), partNumber, bytes)
 		//m, err := driver.UpPart(pre, file.GetMIMEType(), partNumber, bytes, account, md5Str, sha1Str)
 		if err != nil {
-			return err
+			return "", err
 		}
 		if m == "finish" {
-			return nil
+			// resData.Fid
+			return resData, nil
 		}
 		md5s = append(md5s, m)
 		partNumber++
@@ -213,9 +216,9 @@ func (d *QuarkOrUC) Put(ctx context.Context, dstDir model.Obj, stream model.File
 	}
 	err = d.upCommit(pre, md5s)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return d.upFinish(pre)
+	return pre.Data, d.upFinish(pre)
 }
 
 var _ driver.Driver = (*QuarkOrUC)(nil)

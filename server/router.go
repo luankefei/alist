@@ -164,7 +164,7 @@ func _fs(g *gin.RouterGroup) {
 	g.POST("/remove", handles.FsRemove)
 	g.POST("/remove_empty_directory", handles.FsRemoveEmptyDirectory)
 	g.PUT("/put", middlewares.FsUp, handles.FsStream)
-	g.PUT("/form", middlewares.FsUp, handles.FsForm)
+	// g.PUT("/form", middlewares.FsUp, handles.FsForm)
 	g.POST("/link", middlewares.AuthAdmin, handles.Link)
 	// g.POST("/add_aria2", handles.AddOfflineDownload)
 	// g.POST("/add_qbit", handles.AddQbittorrent)
