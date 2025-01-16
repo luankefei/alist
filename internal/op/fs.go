@@ -562,7 +562,7 @@ func Put(ctx context.Context, storage driver.Driver, dstDirPath string, file mod
 		}
 	case driver.Put:
 		data, err = s.Put(ctx, parentDir, file, up)
-		log.Debugf("driver.Put----: %v", data)
+		log.Debugf("driver.Put----: %v %v", data, parentDir)
 		if err == nil && !utils.IsBool(lazyCache...) {
 			ClearCache(storage, dstDirPath)
 		}

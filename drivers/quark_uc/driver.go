@@ -25,6 +25,21 @@ type QuarkOrUC struct {
 	conf   Conf
 }
 
+type CombinedData struct {
+	Fid        string `json:"fid"`
+	Thumbnail  string `json:"thumbnail"`
+	FormatType string `json:"format_type"`
+	Finish     bool   `json:"finish"`
+	// Add fields from model.Obj
+	DirID    string    `json:"dir_id"`
+	Name     string    `json:"name"`
+	Size     int64     `json:"size"`
+	Modified time.Time `json:"modified"`
+	Path     string    `json:"path"`
+	IsDir    bool      `json:"is_dir"`
+	// Add other fields from model.Obj as needed
+}
+
 func (d *QuarkOrUC) Config() driver.Config {
 	return d.config
 }
@@ -174,9 +189,38 @@ func (d *QuarkOrUC) Put(ctx context.Context, dstDir model.Obj, stream model.File
 	if err != nil {
 		return "", err
 	}
+
+	// 创建 CombinedData 实例并合并 resData 和 dstDir
+	combinedData := CombinedData{
+		Fid:        resData.Fid,
+		Thumbnail:  resData.Thumbnail,
+		FormatType: resData.FormatType,
+		Finish:     resData.Finish,
+		DirID:      dstDir.GetID(),
+		Name:       dstDir.GetName(),
+		Size:       dstDir.GetSize(),
+		Modified:   dstDir.ModTime(),
+		Path:       dstDir.GetPath(),
+		IsDir:      dstDir.IsDir(),
+		// Add other fields from model.Obj as needed
+	}
+
+	log.WithFields(log.Fields{
+		"Fid":        combinedData.Fid,
+		"Thumbnail":  combinedData.Thumbnail,
+		"FormatType": combinedData.FormatType,
+		"Finish":     combinedData.Finish,
+		"DirID":      combinedData.DirID,
+		"Name":       combinedData.Name,
+		"Size":       combinedData.Size,
+		"Modified":   combinedData.Modified,
+		"Path":       combinedData.Path,
+		"IsDir":      combinedData.IsDir,
+	}).Debugln("-----combineddata: ")
+
 	if finish {
 		// resData.Fid
-		return resData, nil
+		return combinedData, nil
 	}
 	// part up
 	partSize := pre.Metadata.PartSize
@@ -208,7 +252,7 @@ func (d *QuarkOrUC) Put(ctx context.Context, dstDir model.Obj, stream model.File
 		}
 		if m == "finish" {
 			// resData.Fid
-			return resData, nil
+			return combinedData, nil
 		}
 		md5s = append(md5s, m)
 		partNumber++
