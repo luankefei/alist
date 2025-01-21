@@ -187,6 +187,7 @@ func (d *QuarkOrUC) Put(ctx context.Context, dstDir model.Obj, stream model.File
 	finish, resData, err := d.upHash(md5Str, sha1Str, pre.Data.TaskId)
 	log.Debugln("-----hashdata: ", resData.Fid)
 	if err != nil {
+		log.Debugln("-----hashdata err: ", err)
 		return "", err
 	}
 
@@ -262,7 +263,8 @@ func (d *QuarkOrUC) Put(ctx context.Context, dstDir model.Obj, stream model.File
 	if err != nil {
 		return "", err
 	}
-	return pre.Data, d.upFinish(pre)
+	// return pre.Data, d.upFinish(pre)
+	return combinedData, d.upFinish(pre)
 }
 
 var _ driver.Driver = (*QuarkOrUC)(nil)
